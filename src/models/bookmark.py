@@ -11,7 +11,7 @@ class Bookmark(db.Model):
     visits = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now())
-    updated_at = db.Column(db.DateTime, onupdate=datetime.now())
+    updated_at = db.Column(db.DateTime, onupdate=datetime.now(), default=datetime.now())
 
     def generate_short_url(self):
         characters = string.digits + string.ascii_letters
@@ -28,4 +28,4 @@ class Bookmark(db.Model):
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
-        return 'Bookmark >>> {self.url}'
+        return 'Bookmark>>> {self.url}'

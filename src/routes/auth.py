@@ -13,11 +13,11 @@ def register():
     email = request.json.get('email')
     password = request.json.get('password')
 
-    if len(password) < 6:
-        return jsonify({'error': "Password is too short"}), HTTP_400_BAD_REQUEST
-
     if len(username) < 3:
         return jsonify({'error': "Username is too short"}), HTTP_400_BAD_REQUEST
+
+    if len(password) < 6:
+        return jsonify({'error': "Password is too short"}), HTTP_400_BAD_REQUEST
 
     if not username.isalnum() or " " in username:
         return jsonify({'error': "Username should be alphanumeric, also no spaces"}), HTTP_400_BAD_REQUEST
@@ -36,8 +36,6 @@ def register():
     user = User(username=username, email=email, password=password_hash)
     db.session.add(user)
     db.session.commit()
-
-    print(user)
 
     return jsonify({'message': 'user created', 'user': {
         'id': user.id,
