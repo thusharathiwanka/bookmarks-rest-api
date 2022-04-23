@@ -1,8 +1,8 @@
 import validators
 from flask import Blueprint, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_jwt_extended import create_access_token, create_refresh_token
-from src.constants.http_status_codes import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT, HTTP_201_CREATED
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from src.constants.http_status_codes import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT, HTTP_201_CREATED
 from src.database import db
 from src.models.user import User
 
@@ -74,8 +74,12 @@ def login():
         'refresh_token': refresh_token,
         'username': user.username,
         'email': user.email
-    }})
+    }}), HTTP_200_OK
 
 @auth.get('/me')
+@jwt_required()
 def me():
-    return jsonify({'message': 'Me'})
+    user_id = get_jwt_identity()
+    user = User.query.filter_by(id=user_id).first()
+
+    return jsonify({'message': 'user infomation', 'user': {'username': user.username, 'email': user.email}}), HTTP_200_OK
