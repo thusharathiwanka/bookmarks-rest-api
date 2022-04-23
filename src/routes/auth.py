@@ -15,25 +15,25 @@ def register():
     password = request.json.get('password', '')
 
     if not username or not email or not password:
-        return jsonify({'message': 'Missing username, email or password'}), HTTP_400_BAD_REQUEST
+        return jsonify({'err': 'Missing username, email or password'}), HTTP_400_BAD_REQUEST
 
     if len(username) < 3:
-        return jsonify({'error': "Username is too short"}), HTTP_400_BAD_REQUEST
+        return jsonify({'err': "Username is too short"}), HTTP_400_BAD_REQUEST
 
     if len(password) < 6:
-        return jsonify({'error': "Password is too short"}), HTTP_400_BAD_REQUEST
+        return jsonify({'err': "Password is too short"}), HTTP_400_BAD_REQUEST
 
     if not username.isalnum() or " " in username:
-        return jsonify({'error': "Username should be alphanumeric, also no spaces"}), HTTP_400_BAD_REQUEST
+        return jsonify({'err': "Username should be alphanumeric, also no spaces"}), HTTP_400_BAD_REQUEST
 
     if not validators.email(email):
-        return jsonify({'error': "Email is not valid"}), HTTP_400_BAD_REQUEST
+        return jsonify({'err': "Email is not valid"}), HTTP_400_BAD_REQUEST
 
     if User.query.filter_by(email=email).first() is not None:
-        return jsonify({'error': "Email is taken"}), HTTP_409_CONFLICT
+        return jsonify({'err': "Email is taken"}), HTTP_409_CONFLICT
 
     if User.query.filter_by(username=username).first() is not None:
-        return jsonify({'error': "username is taken"}), HTTP_409_CONFLICT
+        return jsonify({'err': "Username is already taken"}), HTTP_409_CONFLICT
 
     password_hash = generate_password_hash(password)
 
@@ -41,7 +41,7 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({'message': 'user created', 'user': {
+    return jsonify({'msg': 'User created', 'user': {
         'id': user.id,
         'username': user.username,
         'email': user.email
@@ -53,23 +53,23 @@ def login():
     password = request.json.get('password', '')
 
     if not email or not password:
-        return jsonify({'message': 'Missing email or password'}), HTTP_400_BAD_REQUEST
+        return jsonify({'err': 'Missing email or password'}), HTTP_400_BAD_REQUEST
 
     if not validators.email(email):
-        return jsonify({'error': "Email is not valid"}), HTTP_400_BAD_REQUEST
+        return jsonify({'err': "Email is not valid"}), HTTP_400_BAD_REQUEST
 
     user = User.query.filter_by(email=email).first()
 
     if user is None:
-        return jsonify({'error': "User does not exist"}), HTTP_401_UNAUTHORIZED
+        return jsonify({'err': "User does not exist"}), HTTP_401_UNAUTHORIZED
 
     if not check_password_hash(user.password, password):
-        return jsonify({'error': "Email or Password is incorrect"}), HTTP_401_UNAUTHORIZED
+        return jsonify({'err': "Email or Password is incorrect"}), HTTP_401_UNAUTHORIZED
 
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
 
-    return jsonify({'message': 'user logged in', 'user': {
+    return jsonify({'msg': 'User logged in', 'user': {
         'access_token': access_token,
         'refresh_token': refresh_token,
         'username': user.username,
@@ -82,4 +82,12 @@ def me():
     user_id = get_jwt_identity()
     user = User.query.filter_by(id=user_id).first()
 
-    return jsonify({'message': 'user infomation', 'user': {'username': user.username, 'email': user.email}}), HTTP_200_OK
+    return jsonify({'msg': 'User infomation', 'user': {'username': user.username, 'email': user.email}}), HTTP_200_OK
+
+@auth.get('/refresh')
+@jwt_required(refresh=True)
+def refresh():
+    user_id = get_jwt_identity()
+    access_token = create_access_token(identity=user_id)
+
+    return jsonify({'msg': 'Refresh token', 'access_token': access_token}), HTTP_200_OK
