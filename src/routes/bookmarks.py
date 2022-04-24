@@ -27,7 +27,7 @@ def index():
         db.session.add(bookmark)
         db.session.commit()
 
-        return jsonify({'msg':'Bookmark created', 'bookmark': {
+        return jsonify({'msg':'Bookmark created', 'data': {
             'id': bookmark.id,
             'body': bookmark.body,
             'url': bookmark.url,
@@ -64,7 +64,7 @@ def index():
             'has_next': bookmarks.has_next
         }
 
-        return jsonify({'bookmarks': data, 'meta': meta}), HTTP_200_OK
+        return jsonify({'msg': 'Bookmarks found', 'data': data, 'meta': meta}), HTTP_200_OK
 
 @bookmarks.route('/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 @jwt_required()
@@ -76,7 +76,7 @@ def get_bookmark(id):
         return jsonify({'err': 'Bookmark not found'}), HTTP_400_BAD_REQUEST
     
     if request.method == 'GET':
-        return jsonify({'msg':'Bookmark found', 'bookmark': {
+        return jsonify({'msg':'Bookmark found', 'data': {
                     'id': bookmark.id,
                     'body': bookmark.body,
                     'url': bookmark.url,
@@ -101,7 +101,7 @@ def get_bookmark(id):
 
         db.session.commit()
 
-        return jsonify({'msg':'Bookmark updated', 'bookmark': {
+        return jsonify({'msg':'Bookmark updated', 'data': {
             'id': bookmark.id,
             'body': bookmark.body,
             'url': bookmark.url,
@@ -116,3 +116,23 @@ def get_bookmark(id):
         db.session.commit()
 
         return jsonify({'msg':'Bookmark deleted'}), HTTP_200_OK
+
+@bookmarks.get('/stats')
+@jwt_required()
+def stats():
+    current_user = get_jwt_identity()
+    data = []
+
+    items = Bookmark.query.filter_by(user_id = current_user).all()
+
+    for item in items:
+        new_link = {
+            'id': item.id,
+            'visits': item.visits,
+            'url': item.url,
+            'short_url': item.short_url,
+        }
+
+        data.append(new_link)
+    
+    return jsonify({'message': 'Stats found', 'data': data}), HTTP_200_OK
