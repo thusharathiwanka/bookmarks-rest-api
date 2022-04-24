@@ -2,6 +2,7 @@ import validators
 from flask import Blueprint, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from flasgger import swag_from
 from src.constants.http_status_codes import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT, HTTP_201_CREATED
 from src.database import db
 from src.models.user import User
@@ -9,6 +10,7 @@ from src.models.user import User
 auth = Blueprint('auth', __name__, url_prefix='/api/v1/auth')
 
 @auth.post('/register')
+@swag_from('../docs/auth/register.yaml')
 def register():
     username = request.json.get('username', '')
     email = request.json.get('email', '')
@@ -48,6 +50,7 @@ def register():
     }}), HTTP_201_CREATED
 
 @auth.post('/login')
+@swag_from('../docs/auth/login.yaml')
 def login():
     email = request.json.get('email', '')
     password = request.json.get('password', '')

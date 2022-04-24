@@ -1,0 +1,16 @@
+Redirect to long url
+---
+tags:
+  - Bookmarks
+parameters:
+  - in: path
+    name: short_url
+    type: string
+    required: true
+    description: The short url to redirect to long url
+
+responses:
+  "200":
+    description: Redirect to long url
+  "404":
+    description: Short url not found
