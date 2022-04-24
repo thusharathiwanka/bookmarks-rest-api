@@ -1,6 +1,7 @@
 import validators
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import datetime
 from src.constants.http_status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
 from src.models.bookmark import Bookmark
 from src.database import db
@@ -69,14 +70,13 @@ def index():
 @bookmarks.route('/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 @jwt_required()
 def get_bookmark(id):
+    current_user = get_jwt_identity()
+    bookmark = Bookmark.query.filter_by(id = id, user_id = current_user).first()
+    
+    if not bookmark:
+        return jsonify({'err': 'Bookmark not found'}), HTTP_400_BAD_REQUEST
+    
     if request.method == 'GET':
-        current_user = get_jwt_identity()
-
-        bookmark = Bookmark.query.filter_by(id = id, user_id = current_user).first()
-
-        if not bookmark:
-            return jsonify({'err': 'Bookmark not found'}), HTTP_400_BAD_REQUEST
-
         return jsonify({'msg':'Bookmark found', 'bookmark': {
                     'id': bookmark.id,
                     'body': bookmark.body,
@@ -86,3 +86,31 @@ def get_bookmark(id):
                     'created_at': bookmark.created_at,
                     'updated_at': bookmark.updated_at
                 }}), HTTP_200_OK
+
+    if request.method == 'PUT':
+        if not bookmark:
+            return jsonify({'err': 'Bookmark not found'}), HTTP_400_BAD_REQUEST
+
+        body = request.json.get('body', '')
+        url = request.json.get('url', '')
+
+        if not validators.url(url):
+            return jsonify({'err': "URL is not valid"}), HTTP_400_BAD_REQUEST
+
+        if Bookmark.query.filter_by(url=url).first():
+            return jsonify({'err': "URL is already bookmarked"}), HTTP_409_CONFLICT
+
+        bookmark.body = body
+        bookmark.url = url
+
+        db.session.commit()
+
+        return jsonify({'msg':'Bookmark updated', 'bookmark': {
+            'id': bookmark.id,
+            'body': bookmark.body,
+            'url': bookmark.url,
+            'short_url': bookmark.short_url,
+            'visits': bookmark.visits,
+            'created_at': bookmark.created_at,
+            'updated_at': bookmark.updated_at
+        }}), HTTP_200_OK
