@@ -1,7 +1,6 @@
 import validators
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
 from src.constants.http_status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
 from src.models.bookmark import Bookmark
 from src.database import db
@@ -65,7 +64,7 @@ def index():
             'has_next': bookmarks.has_next
         }
 
-        return jsonify({'bookmarks': data, 'mete': meta}), HTTP_200_OK
+        return jsonify({'bookmarks': data, 'meta': meta}), HTTP_200_OK
 
 @bookmarks.route('/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 @jwt_required()
@@ -88,9 +87,6 @@ def get_bookmark(id):
                 }}), HTTP_200_OK
 
     if request.method == 'PUT':
-        if not bookmark:
-            return jsonify({'err': 'Bookmark not found'}), HTTP_400_BAD_REQUEST
-
         body = request.json.get('body', '')
         url = request.json.get('url', '')
 
@@ -114,3 +110,9 @@ def get_bookmark(id):
             'created_at': bookmark.created_at,
             'updated_at': bookmark.updated_at
         }}), HTTP_200_OK
+    
+    if request.method == 'DELETE':
+        db.session.delete(bookmark)
+        db.session.commit()
+
+        return jsonify({'msg':'Bookmark deleted'}), HTTP_200_OK
