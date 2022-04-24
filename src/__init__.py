@@ -1,6 +1,7 @@
 import os
 from flask import Flask, redirect
 from flask_jwt_extended import JWTManager
+from src.constants.http_status_codes import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
 from src.database import db
 from src.routes.auth import auth
 from src.routes.bookmarks import bookmarks
@@ -33,5 +34,13 @@ def create_app(test_config = None):
     db.session.commit()
 
     return redirect(bookmark.url)
-  
+
+  @app.errorhandler(HTTP_404_NOT_FOUND)
+  def handle_404(error):
+    return {'err': 'Not found'}, HTTP_404_NOT_FOUND
+
+  @app.errorhandler(HTTP_500_INTERNAL_SERVER_ERROR)
+  def handle_500(error):
+    return {'err': 'Something went wrong'}, HTTP_500_INTERNAL_SERVER_ERROR
+
   return app
