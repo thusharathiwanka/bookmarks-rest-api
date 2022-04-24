@@ -65,3 +65,24 @@ def index():
         }
 
         return jsonify({'bookmarks': data, 'mete': meta}), HTTP_200_OK
+
+@bookmarks.route('/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+@jwt_required()
+def get_bookmark(id):
+    if request.method == 'GET':
+        current_user = get_jwt_identity()
+
+        bookmark = Bookmark.query.filter_by(id = id, user_id = current_user).first()
+
+        if not bookmark:
+            return jsonify({'err': 'Bookmark not found'}), HTTP_400_BAD_REQUEST
+
+        return jsonify({'msg':'Bookmark found', 'bookmark': {
+                    'id': bookmark.id,
+                    'body': bookmark.body,
+                    'url': bookmark.url,
+                    'short_url': bookmark.short_url,
+                    'visits': bookmark.visits,
+                    'created_at': bookmark.created_at,
+                    'updated_at': bookmark.updated_at
+                }}), HTTP_200_OK
