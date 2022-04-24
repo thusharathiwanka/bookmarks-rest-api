@@ -37,13 +37,15 @@ def index():
             'updated_at': bookmark.updated_at
         }}), HTTP_201_CREATED
     else:
-        bookmarks = Bookmark.query.filter_by(user_id = current_user).all()
-
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 5, type=int)
         data = []
 
-        for bookmark in bookmarks:
+        bookmarks = Bookmark.query.filter_by(user_id = current_user).paginate(page, per_page)
+
+        for bookmark in bookmarks.items:
             data.append({
-                'id': bookmark.id,
+                'id': bookmark.id,  
                 'body': bookmark.body,
                 'url': bookmark.url,
                 'short_url': bookmark.short_url,
@@ -52,4 +54,14 @@ def index():
                 'updated_at': bookmark.updated_at
             })
 
-        return jsonify({'bookmarks': data}), HTTP_200_OK
+        meta = {
+            'page': bookmarks.page,
+            'pages': bookmarks.pages,
+            'total_count': bookmarks.total,
+            'prev_page': bookmarks.prev_num,
+            'next_page': bookmarks.next_num,
+            'has_prev': bookmarks.has_prev,
+            'has_next': bookmarks.has_next
+        }
+
+        return jsonify({'bookmarks': data, 'mete': meta}), HTTP_200_OK
